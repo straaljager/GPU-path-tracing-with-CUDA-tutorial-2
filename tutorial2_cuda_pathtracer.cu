@@ -1,5 +1,6 @@
 /*
  *  Basic CUDA based triangle mesh path tracer.
+ *  For background info, see http://raytracey.blogspot.co.nz/2015/12/gpu-path-tracing-tutorial-2-interactive.html
  *  Based on CUDA ray tracing code from http://cg.alexandra.dk/?p=278
  *  Copyright (C) 2015  Sam Lapere 
  *
