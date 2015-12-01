@@ -39,7 +39,7 @@
 #define M_PI 3.14159265359f
 #define width 1024	// screenwidth
 #define height 576	// screenheight
-#define samps  1// samples
+#define samps  1	// samples per pixel per pass
 
 int total_number_of_triangles = 0;
 int frames = 0;
@@ -479,26 +479,28 @@ __global__ void render_kernel(float3 *output, float3* accumbuffer, const int num
 
 	int i = (height - y - 1)*width + x; // pixel index
 
-	pixelcol = make_float3(0.0f, 0.0f, 0.0f); // reset r to zero for every pixel	
+	pixelcol = make_float3(0.0f, 0.0f, 0.0f); // reset to zero for every pixel	
 
-	for (int s = 0; s < samps; s++){ // singlepassimage, otherwise samps
+	for (int s = 0; s < samps; s++){ 
 
 		// compute primary ray direction
 		float3 d = cx*((.25 + x) / width - .5) + cy*((.25 + y) / height - .5) + cam.dir;
 		// normalize primary ray direction
 		d = normalize(d);
 		// add accumulated colour from path bounces
-		pixelcol += radiance(Ray(cam.orig + d * 40, d), &randState, numtriangles, scene_bbmin, scene_bbmax)*(1. / samps);   // , gputexdata1, texoffsets
+		pixelcol += radiance(Ray(cam.orig + d * 40, d), &randState, numtriangles, scene_bbmin, scene_bbmax)*(1. / samps);   
 	}       // Camera rays are pushed ^^^^^ forward to start in interior 
 
 	// add pixel colour to accumulation buffer (accumulates all samples) 
 	accumbuffer[i] += pixelcol;
-	// normalize colour: divide colour by the number of calculated frames so far
+	// averaged colour: divide colour by the number of calculated frames so far
 	float3 tempcol = accumbuffer[i] / framenumber;
 
 	Colour fcolour;
-	float3 colour = make_float3(clamp(tempcol.x, 0.0f, 1.0f), clamp(tempcol.y, 0.0f, 1.0f), clamp(tempcol.z, 0.0f, 1.0f));  // r instead of tempcol
+	float3 colour = make_float3(clamp(tempcol.x, 0.0f, 1.0f), clamp(tempcol.y, 0.0f, 1.0f), clamp(tempcol.z, 0.0f, 1.0f)); 
+	// convert from 96-bit to 24-bit colour + perform gamma correction
 	fcolour.components = make_uchar4((unsigned char)(powf(colour.x, 1 / 2.2f) * 255), (unsigned char)(powf(colour.y, 1 / 2.2f) * 255), (unsigned char)(powf(colour.z, 1 / 2.2f) * 255), 1);
+	// store pixel coordinates and pixelcolour in OpenGL readable outputbuffer
 	output[i] = make_float3(x, y, fcolour.c);
 }
 
@@ -527,7 +529,7 @@ __device__ float timer = 0.0f;
 
 inline float clamp(float x){ return x<0 ? 0 : x>1 ? 1 : x; }
 
-inline int toInt(float x){ return int(pow(clamp(x), 1 / 2.2) * 255 + .5); }  // RGB float in range [0,1] to int in range [0, 255]
+//inline int toInt(float x){ return int(pow(clamp(x), 1 / 2.2) * 255 + .5); }  // RGB float in range [0,1] to int in range [0, 255]
 
 // initialise OpenGL viewport
 void init()
@@ -537,6 +539,7 @@ void init()
 	gluOrtho2D(0.0, width, 0.0, height);
 }
 
+// buffer for accumulating samples over several frames
 float3* accumulatebuffer;
 // output buffer
 float3 *dptr;
@@ -553,12 +556,13 @@ void disp(void)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// RAY TRACING:
-	//dim3 grid(WINDOW / block.x, WINDOW / block.y, 1);
-	dim3 block(16, 16, 1);   // dim3 CUDA specific syntax, block and grid are required to schedule CUDA threads over streaming multiprocessors
+	// dim3 grid(WINDOW / block.x, WINDOW / block.y, 1);
+	// dim3 CUDA specific syntax, block and grid are required to schedule CUDA threads over streaming multiprocessors
+	dim3 block(16, 16, 1);   
 	dim3 grid(width / block.x, height / block.y, 1);
 
 	// launch CUDA path tracing kernel, pass in a hashed seed based on number of frames
-	render_kernel << < grid, block >> >(dptr, accumulatebuffer, total_number_of_triangles, frames, WangHash(frames), scene_aabbox_max, scene_aabbox_min);  // launches CUDA render kernel from the host
+	render_kernel <<< grid, block >>>(dptr, accumulatebuffer, total_number_of_triangles, frames, WangHash(frames), scene_aabbox_max, scene_aabbox_min);  // launches CUDA render kernel from the host
 
 	cudaThreadSynchronize();
 
@@ -607,9 +611,7 @@ struct TriangleMesh
 };
 
 TriangleMesh mesh1;
-TriangleMesh ground;
 TriangleMesh mesh2;
-TriangleMesh object;
 
 float *dev_triangle_p; // the cuda device pointer that points to the uploaded triangles
 
