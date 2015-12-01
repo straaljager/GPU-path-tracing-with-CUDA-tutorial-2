@@ -10,7 +10,7 @@
 #include <vector_types.h>
 #include <vector_functions.h>
 #include "device_launch_parameters.h"
-#include "C:\Users\Sam\Documents\Visual Studio 2013\Projects\Stonehenge_CUDA_raytracer\Stonehenge_CUDA_raytracer\cutil_math_revised2014.h"
+#include "cutil_math.h"  // required for float3 vector math
 #include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\extras\CUPTI\include\GL\glew.h"
 #include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\extras\CUPTI\include\GL\glut.h"
 #include <cuda_runtime.h>
