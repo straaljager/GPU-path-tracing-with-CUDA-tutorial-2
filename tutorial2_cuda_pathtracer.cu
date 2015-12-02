@@ -123,6 +123,7 @@ __device__ float3 getTriangleNormal(const int triangleIndex){
 	float4 edge1 = tex1Dfetch(triangle_texture, triangleIndex * 3 + 1);
 	float4 edge2 = tex1Dfetch(triangle_texture, triangleIndex * 3 + 2);
 
+	// cross product of two triangle edges yields a vector orthogonal to triangle plane
 	float3 trinormal = cross(make_float3(edge1.x, edge1.y, edge1.z), make_float3(edge2.x, edge2.y, edge2.z));
 	trinormal = normalize(trinormal);
 
@@ -133,19 +134,23 @@ __device__ void intersectAllTriangles(const Ray& r, float& t_scene, int& triangl
 
 	for (int i = 0; i < number_of_triangles; i++)
 	{
-	// the triangles are packed into the 1D texture in a way that each float4 contains 
-	// either the first triangle-vertex or two triangle edges, like this: 
-	// (float4(vertex.x,vertex.y,vertex.z, 0), float4 (egde1.x,egde1.y,egde1.z,0),float4 (egde2.x,egde2.y,egde2.z,0)) for each triangle.
+	// the triangles are packed into the 1D texture using three consecutive float4 structs for each triangle, 
+	// first float4 contains the first vertex, second float4 contains the first precomputed edge, third float4 contains second precomputed edge like this: 
+	// (float4(vertex.x,vertex.y,vertex.z, 0), float4 (egde1.x,egde1.y,egde1.z,0),float4 (egde2.x,egde2.y,egde2.z,0)) 
 		
-		float4 v0 = tex1Dfetch(triangle_texture, i * 3);
+		// i is triangle index, each triangle represented by 3 float4s in triangle_texture
+		float4 v0 = tex1Dfetch(triangle_texture, i * 3); 
 		float4 edge1 = tex1Dfetch(triangle_texture, i * 3 + 1);
 		float4 edge2 = tex1Dfetch(triangle_texture, i * 3 + 2);
 
+		// intersect ray with reconstructed triangle	
 		float t = RayTriangleIntersection(r,
 			make_float3(v0.x, v0.y, v0.z),
 			make_float3(edge1.x, edge1.y, edge1.z),
 			make_float3(edge2.x, edge2.y, edge2.z));
 
+		// keep track of closest distance and closest triangle
+		// if ray/tri intersection finds an intersection point that is closer than closest intersection found so far
 		if (t < t_scene && t > 0.001)
 		{
 			t_scene = t;
@@ -157,6 +162,7 @@ __device__ void intersectAllTriangles(const Ray& r, float& t_scene, int& triangl
 
 
 // AXIS ALIGNED BOXES
+
 // helper functions
 inline __device__ float3 minf3(float3 a, float3 b){ return make_float3(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y, a.z < b.z ? a.z : b.z); }
 inline __device__ float3 maxf3(float3 a, float3 b){ return make_float3(a.x > b.x ? a.x : b.x, a.y > b.y ? a.y : b.y, a.z > b.z ? a.z : b.z); }
@@ -165,18 +171,18 @@ inline __device__ float maxf1(float a, float b){ return a > b ? a : b; }
 
 struct Box {
 
-	float3 min;
-	float3 max;
-	float3 emi;
-	float3 col;
-	Refl_t refl;
+	float3 min; // minimum bounds
+	float3 max; // maximum bounds
+	float3 emi; // emission
+	float3 col; // colour
+	Refl_t refl; // material type
 
 	__device__ float intersect(const Ray &r) const {
 
+		float epsilon = 0.001f; // required to prevent self intersection
+
 		float3 tmin = (min - r.orig) / r.dir;
 		float3 tmax = (max - r.orig) / r.dir;
-
-		float epsilon = 0.001f;
 
 		float3 real_min = minf3(tmin, tmax);
 		float3 real_max = maxf3(tmin, tmax);
@@ -260,7 +266,7 @@ __device__ inline bool intersect_scene(const Ray &r, float &t, int &sphere_id, i
 		if ((d = spheres[i].intersect(r)) && d < t){ t = d; sphere_id = i; geomtype = 1; }
 
 	// BOXES
-	// intersect boxes in the scene
+	// intersect all boxes in the scene
 	float numboxes = sizeof(boxes) / sizeof(Box);
 	for (int i = int(numboxes); i--;) // for all boxes in scene
 		if ((k = boxes[i].intersect(r)) && k < t){ t = k; box_id = i; geomtype = 2; }
@@ -340,7 +346,7 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 			Box &box = boxes[box_id];
 			x = r.orig + r.dir*t;  // intersection point on object
 			n = normalize(box.normalAt(x)); // normal
-			nl = n;// dot(n, r.dir) < 0 ? n : n * -1;  // correctly oriented normal
+			nl = dot(n, r.dir) < 0 ? n : n * -1;  // correctly oriented normal
 			f = box.col;
 			refltype = box.refl;
 			emit = box.emi;
