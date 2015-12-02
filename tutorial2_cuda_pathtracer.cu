@@ -89,6 +89,7 @@ struct Sphere {
 
 // TRIANGLES
 // the classic ray triangle intersection: http://www.cs.virginia.edu/~gfx/Courses/2003/ImageSynthesis/papers/Acceleration/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
+// for an explanation see http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 
 __device__ float RayTriangleIntersection(const Ray &r,
 	const float3 &v0,
@@ -132,6 +133,10 @@ __device__ void intersectAllTriangles(const Ray& r, float& t_scene, int& triangl
 
 	for (int i = 0; i < number_of_triangles; i++)
 	{
+	// the triangles are packed into the 1D texture in a way that each float4 contains 
+	// either the first triangle-vertex or two triangle edges, like this: 
+	// (float4(vertex.x,vertex.y,vertex.z, 0), float4 (egde1.x,egde1.y,egde1.z,0),float4 (egde2.x,egde2.y,egde2.z,0)) for each triangle.
+		
 		float4 v0 = tex1Dfetch(triangle_texture, i * 3);
 		float4 edge1 = tex1Dfetch(triangle_texture, i * 3 + 1);
 		float4 edge2 = tex1Dfetch(triangle_texture, i * 3 + 2);
