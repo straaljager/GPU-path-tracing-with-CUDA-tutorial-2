@@ -89,6 +89,7 @@ struct Sphere {
 };
 
 // TRIANGLES
+
 // the classic ray triangle intersection: http://www.cs.virginia.edu/~gfx/Courses/2003/ImageSynthesis/papers/Acceleration/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 // for an explanation see http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 
@@ -178,6 +179,10 @@ struct Box {
 	float3 col; // colour
 	Refl_t refl; // material type
 
+	// ray/box intersection
+	// for theoretical background of the algorithm see 
+	// http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+	// optimised code from http://www.gamedev.net/topic/495636-raybox-collision-intersection-point/
 	__device__ float intersect(const Ray &r) const {
 
 		float epsilon = 0.001f; // required to prevent self intersection
