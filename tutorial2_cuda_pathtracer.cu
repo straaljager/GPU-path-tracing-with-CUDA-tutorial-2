@@ -45,7 +45,8 @@ float3 scene_aabbox_min;
 float3 scene_aabbox_max;
 
 // the scene triangles are stored in a 1D CUDA texture of float4 for memory alignment
-// each triangle is stored as the 3 vertices after each other
+// store two edges instead of vertices
+// each triangle is stored as three float4s: (float4 first_vertex, float4 edge1, float4 edge2)
 texture<float4, 1, cudaReadModeElementType> triangle_texture;  
 
 // hardcoded camera position
@@ -335,9 +336,9 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 			x = r.orig + r.dir*t;  // intersection point on object
 			n = normalize(x - sphere.pos);		// normal
 			nl = dot(n, r.dir) < 0 ? n : n * -1; // correctly oriented normal
-			f = sphere.col;
+			f = sphere.col;   // object colour
 			refltype = sphere.refl;
-			emit = sphere.emi;
+			emit = sphere.emi;  // object emission
 			accucolor += (mask * emit);
 		}
 
@@ -347,9 +348,9 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 			x = r.orig + r.dir*t;  // intersection point on object
 			n = normalize(box.normalAt(x)); // normal
 			nl = dot(n, r.dir) < 0 ? n : n * -1;  // correctly oriented normal
-			f = box.col;
+			f = box.col;  // box colour
 			refltype = box.refl;
-			emit = box.emi;
+			emit = box.emi; // box emission
 			accucolor += (mask * emit);
 		}
 
@@ -435,13 +436,13 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 				float TP = Tr / (1.f - P);
 
 				// randomly choose reflection or transmission ray
-				if (curand_uniform(randstate) < 0.25) // reflect
+				if (curand_uniform(randstate) < 0.25) // reflection ray
 				{
 					mask *= RP;
 					d = reflect(r.dir, n);
 					x += nl * 0.02f;
 				}
-				else // transmit
+				else // transmission ray
 				{
 					mask *= TP;
 					d = tdir; //r = Ray(x, tdir); 
@@ -656,7 +657,7 @@ void initCUDAmemoryTriMesh()
 		v2 += offset1;
 
 		// store triangle data as float4
-		// store edges instead of vertex points, to save some calculations in the
+		// store two edges per triangle instead of vertices, to save some calculations in the
 		// ray triangle intersection test
 		triangles.push_back(make_float4(v0.x, v0.y, v0.z, 0));
 		triangles.push_back(make_float4(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, 0));  
