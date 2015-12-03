@@ -293,6 +293,7 @@ __device__ inline bool intersect_scene(const Ray &r, float &t, int &sphere_id, i
 
 
 // hash function to calculate new seed for each frame
+// see http://www.reedbeta.com/blog/2013/01/12/quick-and-easy-gpu-random-numbers-in-d3d11/
 uint WangHash(uint a) {
 	a = (a ^ 61) ^ (a >> 16);
 	a = a + (a << 3);
