@@ -525,34 +525,11 @@ void Timer(int obsolete) {
 	glutTimerFunc(30, Timer, 0);
 }
 
-void createVBO(GLuint* vbo)
-{
-	//create vertex buffer object
-	glGenBuffers(1, vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-
-	//initialize VBO
-	unsigned int size = width * height * sizeof(float3);  // 3 floats
-	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//register VBO with CUDA
-	cudaGLRegisterBufferObject(*vbo);
-}
-
 __device__ float timer = 0.0f;
 
 inline float clamp(float x){ return x<0 ? 0 : x>1 ? 1 : x; }
 
 //inline int toInt(float x){ return int(pow(clamp(x), 1 / 2.2) * 255 + .5); }  // RGB float in range [0,1] to int in range [0, 255]
-
-// initialise OpenGL viewport
-void init()
-{
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glMatrixMode(GL_PROJECTION);
-	gluOrtho2D(0.0, width, 0.0, height);
-}
 
 // buffer for accumulating samples over several frames
 float3* accumulatebuffer;
@@ -789,7 +766,6 @@ int main(int argc, char** argv){
 	cudaMalloc(&accumulatebuffer, width * height * sizeof(float3));
 	// load triangle meshes in CUDA memory
 	initCUDAmemoryTriMesh();
-
 	// init glut for OpenGL viewport
 	glutInit(&argc, argv);
 	// specify the display mode to be RGB and single buffering
@@ -800,9 +776,10 @@ int main(int argc, char** argv){
 	glutInitWindowSize(width, height);
 	// create the window and set title
 	glutCreateWindow("Basic triangle mesh path tracer in CUDA");
-	
 	// init OpenGL
-	init();
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glMatrixMode(GL_PROJECTION);
+	gluOrtho2D(0.0, width, 0.0, height);
 	fprintf(stderr, "OpenGL initialized \n");
 	// register callback function to display graphics:
 	glutDisplayFunc(disp);
@@ -815,7 +792,15 @@ int main(int argc, char** argv){
 	fprintf(stderr, "glew initialized  \n");
 	// call Timer():
 	Timer(0);
-	createVBO(&vbo);
+	//create VBO (vertex buffer object)
+	glGenBuffers(1, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+	//initialize VBO
+	unsigned int size = width * height * sizeof(float3);  // 3 floats
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//register VBO with CUDA
+	cudaGLRegisterBufferObject(*vbo);
 	fprintf(stderr, "VBO created  \n");
 	// enter the main loop and process events
 	fprintf(stderr, "Entering glutMainLoop...  \n");
