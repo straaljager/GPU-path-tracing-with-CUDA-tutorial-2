@@ -609,6 +609,10 @@ float *dev_triangle_p; // the cuda device pointer that points to the uploaded tr
 
 void loadObj(const std::string filename, TriangleMesh &mesh); // forward declaration
 
+// 1. load triangle mesh data from obj files
+// 2. copy data to CPU memory (into vector<float4> triangles)
+// 3. copy to CUDA global memory (allocated with dev_triangle_p pointer)
+// 4. copy to CUDA texture memory with bindtriangles()
 void initCUDAmemoryTriMesh()
 {
 	loadObj("data/teapot.obj", mesh1);
