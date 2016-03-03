@@ -619,7 +619,7 @@ void initCUDAmemoryTriMesh()
 	loadObj("data/bunny.obj", mesh2);
 
 	// scalefactor and offset to position/scale triangle meshes
-	float scalefactor1 = 8;
+	float scalefactor1 = 200;
 	float scalefactor2 = 300;  // 300
 	float3 offset1 = make_float3(90, 22, 100);// (30, -2, 80);
 	float3 offset2 = make_float3(30, -2, 80);
