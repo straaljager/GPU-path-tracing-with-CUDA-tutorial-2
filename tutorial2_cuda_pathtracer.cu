@@ -1,36 +1,36 @@
 /*
- *  Basic CUDA based triangle mesh path tracer.
- *  For background info, see http://raytracey.blogspot.co.nz/2015/12/gpu-path-tracing-tutorial-2-interactive.html
- *  Based on CUDA ray tracing code from http://cg.alexandra.dk/?p=278
- *  Copyright (C) 2015  Sam Lapere 
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- */
+*  Basic CUDA based triangle mesh path tracer.
+*  For background info, see http://raytracey.blogspot.co.nz/2015/12/gpu-path-tracing-tutorial-2-interactive.html
+*  Based on CUDA ray tracing code from http://cg.alexandra.dk/?p=278
+*  Copyright (C) 2015  Sam Lapere
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*/
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
-#include <cuda.h>
-#include <math_functions.h>
-#include <vector_types.h>
-#include <vector_functions.h>
-#include "device_launch_parameters.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\cuda.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\math_functions.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\vector_types.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\vector_functions.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\device_launch_parameters.h"
 #include "cutil_math.h"  // required for float3 vector math
-#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\extras\CUPTI\include\GL\glew.h"
-#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\extras\CUPTI\include\GL\glut.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
-#include <curand.h>
-#include <curand_kernel.h>
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glew.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glut.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\cuda_runtime.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\cuda_gl_interop.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\curand.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include\curand_kernel.h"
 
 #define M_PI 3.14159265359f
 #define width 1024	// screenwidth
@@ -47,7 +47,7 @@ float3 scene_aabbox_max;
 // the scene triangles are stored in a 1D CUDA texture of float4 for memory alignment
 // store two edges instead of vertices
 // each triangle is stored as three float4s: (float4 first_vertex, float4 edge1, float4 edge2)
-texture<float4, 1, cudaReadModeElementType> triangle_texture;  
+texture<float4, 1, cudaReadModeElementType> triangle_texture;
 
 // hardcoded camera position
 __device__ float3 firstcamorig = { 50, 52, 295.6 };
@@ -136,12 +136,12 @@ __device__ void intersectAllTriangles(const Ray& r, float& t_scene, int& triangl
 
 	for (int i = 0; i < number_of_triangles; i++)
 	{
-	// the triangles are packed into the 1D texture using three consecutive float4 structs for each triangle, 
-	// first float4 contains the first vertex, second float4 contains the first precomputed edge, third float4 contains second precomputed edge like this: 
-	// (float4(vertex.x,vertex.y,vertex.z, 0), float4 (egde1.x,egde1.y,egde1.z,0),float4 (egde2.x,egde2.y,egde2.z,0)) 
-		
+		// the triangles are packed into the 1D texture using three consecutive float4 structs for each triangle, 
+		// first float4 contains the first vertex, second float4 contains the first precomputed edge, third float4 contains second precomputed edge like this: 
+		// (float4(vertex.x,vertex.y,vertex.z, 0), float4 (egde1.x,egde1.y,egde1.z,0),float4 (egde2.x,egde2.y,egde2.z,0)) 
+
 		// i is triangle index, each triangle represented by 3 float4s in triangle_texture
-		float4 v0 = tex1Dfetch(triangle_texture, i * 3); 
+		float4 v0 = tex1Dfetch(triangle_texture, i * 3);
 		float4 edge1 = tex1Dfetch(triangle_texture, i * 3 + 1);
 		float4 edge2 = tex1Dfetch(triangle_texture, i * 3 + 2);
 
@@ -197,7 +197,7 @@ struct Box {
 		float maxmin = maxf1(maxf1(real_min.x, real_min.y), real_min.z);
 
 		if (minmax >= maxmin) { return maxmin > epsilon ? maxmin : 0; }
-		else return 0;	
+		else return 0;
 	}
 
 	// calculate normal for point on axis aligned box
@@ -248,10 +248,10 @@ __constant__ Sphere spheres[] = {
 };
 
 __constant__ Box boxes[] = {
-// FORMAT: { float3 minbounds,    float3 maxbounds,         float3 emission,    float3 colour,       Refl_t }
+	// FORMAT: { float3 minbounds,    float3 maxbounds,         float3 emission,    float3 colour,       Refl_t }
 	{ { 5.0f, 0.0f, 70.0f }, { 45.0f, 11.0f, 115.0f }, { .0f, .0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, DIFF },
-	{ {85.0f, 0.0f, 95.0f }, { 95.0f, 20.0f, 105.0f }, { .0f, .0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, DIFF },
-	{ {75.0f, 20.0f, 85.0f}, { 105.0f, 22.0f, 115.0f }, { .0f, .0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, DIFF },
+	{ { 85.0f, 0.0f, 95.0f }, { 95.0f, 20.0f, 105.0f }, { .0f, .0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, DIFF },
+	{ { 75.0f, 20.0f, 85.0f }, { 105.0f, 22.0f, 115.0f }, { .0f, .0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, DIFF },
 };
 
 
@@ -286,7 +286,7 @@ __device__ inline bool intersect_scene(const Ray &r, float &t, int &sphere_id, i
 	if (scene_bbox.intersect(r)){
 		intersectAllTriangles(r, t, triangle_id, number_of_triangles, geomtype);
 	}
-	
+
 	// t is distance to closest intersection of ray with all primitives in the scene (spheres, boxes and triangles)
 	return t<inf;
 }
@@ -366,19 +366,19 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 			x = r.orig + r.dir*t;  // intersection point
 			n = normalize(getTriangleNormal(tri_index));  // normal 
 			nl = dot(n, r.dir) < 0 ? n : n * -1;  // correctly oriented normal
-			
+
 			// colour, refltype and emit value are hardcoded and apply to all triangles
 			// no per triangle material support yet
 			f = make_float3(0.9f, 0.4f, 0.1f);  // triangle colour
-			refltype = REFR;  
-			emit = make_float3(0.0f, 0.0f, 0.0f); 
+			refltype = REFR;
+			emit = make_float3(0.0f, 0.0f, 0.0f);
 			accucolor += (mask * emit);
 		}
 
 		// SHADING: diffuse, specular or refractive
-		
+
 		// ideal diffuse reflection (see "Realistic Ray Tracing", P. Shirley)
-		if (refltype == DIFF){ 
+		if (refltype == DIFF){
 
 			// create 2 random numbers
 			float r1 = 2 * M_PI * curand_uniform(randstate);
@@ -392,7 +392,7 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 
 			// compute cosine weighted random ray direction on hemisphere 
 			d = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrtf(1 - r2));
-			
+
 			// offset origin next path segment to prevent self intersection
 			x += nl * 0.03;
 
@@ -401,26 +401,26 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 		}
 
 		// ideal specular reflection (mirror) 
-		if (refltype == SPEC){  
+		if (refltype == SPEC){
 
 			// compute relfected ray direction according to Snell's law
 			d = r.dir - 2.0f * n * dot(n, r.dir);
-			
+
 			// offset origin next path segment to prevent self intersection
 			x += nl * 0.01f;
-		
+
 			// multiply mask with colour of object
-			mask *= f; 
+			mask *= f;
 		}
 
 		// ideal refraction (based on smallpt code by Kevin Beason)
-		if (refltype == REFR){ 
+		if (refltype == REFR){
 
 			bool into = dot(n, nl) > 0; // is ray entering or leaving refractive material?
 			float nc = 1.0f;  // Index of Refraction air
 			float nt = 1.5f;  // Index of Refraction glass/water
 			float nnt = into ? nc / nt : nt / nc;  // IOR ratio of refractive materials
-			float ddn = dot(r.dir, nl); 
+			float ddn = dot(r.dir, nl);
 			float cos2t = 1.0f - nnt*nnt * (1.f - ddn*ddn);
 
 			if (cos2t < 0.0f) // total internal reflection 
@@ -437,7 +437,7 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 				float c = 1.f - (into ? -ddn : dot(tdir, n));
 				float Re = R0 + (1.f - R0) * c * c * c * c * c;
 				float Tr = 1 - Re; // Transmission
-				float P = .25f + .5f * Re; 
+				float P = .25f + .5f * Re;
 				float RP = Re / P;
 				float TP = Tr / (1.f - P);
 
@@ -458,7 +458,7 @@ __device__ float3 radiance(Ray &r, curandState *randstate, const int totaltris, 
 		}
 
 		// set up origin and direction of next path segment
-		r.orig = x; 
+		r.orig = x;
 		r.dir = d;
 	}
 
@@ -496,14 +496,14 @@ __global__ void render_kernel(float3 *output, float3* accumbuffer, const int num
 
 	pixelcol = make_float3(0.0f, 0.0f, 0.0f); // reset to zero for every pixel	
 
-	for (int s = 0; s < samps; s++){ 
+	for (int s = 0; s < samps; s++){
 
 		// compute primary ray direction
 		float3 d = cx*((.25 + x) / width - .5) + cy*((.25 + y) / height - .5) + cam.dir;
 		// normalize primary ray direction
 		d = normalize(d);
 		// add accumulated colour from path bounces
-		pixelcol += radiance(Ray(cam.orig + d * 40, d), &randState, numtriangles, scene_bbmin, scene_bbmax)*(1. / samps);   
+		pixelcol += radiance(Ray(cam.orig + d * 40, d), &randState, numtriangles, scene_bbmin, scene_bbmax)*(1. / samps);
 	}       // Camera rays are pushed ^^^^^ forward to start in interior 
 
 	// add pixel colour to accumulation buffer (accumulates all samples) 
@@ -512,7 +512,7 @@ __global__ void render_kernel(float3 *output, float3* accumbuffer, const int num
 	float3 tempcol = accumbuffer[i] / framenumber;
 
 	Colour fcolour;
-	float3 colour = make_float3(clamp(tempcol.x, 0.0f, 1.0f), clamp(tempcol.y, 0.0f, 1.0f), clamp(tempcol.z, 0.0f, 1.0f)); 
+	float3 colour = make_float3(clamp(tempcol.x, 0.0f, 1.0f), clamp(tempcol.y, 0.0f, 1.0f), clamp(tempcol.z, 0.0f, 1.0f));
 	// convert from 96-bit to 24-bit colour + perform gamma correction
 	fcolour.components = make_uchar4((unsigned char)(powf(colour.x, 1 / 2.2f) * 255), (unsigned char)(powf(colour.y, 1 / 2.2f) * 255), (unsigned char)(powf(colour.z, 1 / 2.2f) * 255), 1);
 	// store pixel coordinates and pixelcolour in OpenGL readable outputbuffer
@@ -536,7 +536,7 @@ float3* accumulatebuffer;
 // output buffer
 float3 *dptr;
 
-void disp(void)  
+void disp(void)
 {
 	frames++;
 	cudaThreadSynchronize();
@@ -550,11 +550,11 @@ void disp(void)
 	// RAY TRACING:
 	// dim3 grid(WINDOW / block.x, WINDOW / block.y, 1);
 	// dim3 CUDA specific syntax, block and grid are required to schedule CUDA threads over streaming multiprocessors
-	dim3 block(16, 16, 1);   
+	dim3 block(16, 16, 1);
 	dim3 grid(width / block.x, height / block.y, 1);
 
 	// launch CUDA path tracing kernel, pass in a hashed seed based on number of frames
-	render_kernel <<< grid, block >>>(dptr, accumulatebuffer, total_number_of_triangles, frames, WangHash(frames), scene_aabbox_max, scene_aabbox_min);  // launches CUDA render kernel from the host
+	render_kernel << < grid, block >> >(dptr, accumulatebuffer, total_number_of_triangles, frames, WangHash(frames), scene_aabbox_max, scene_aabbox_min);  // launches CUDA render kernel from the host
 
 	cudaThreadSynchronize();
 
@@ -615,7 +615,7 @@ void loadObj(const std::string filename, TriangleMesh &mesh); // forward declara
 // 4. copy to CUDA texture memory with bindtriangles()
 void initCUDAmemoryTriMesh()
 {
-	loadObj("data/teapot.obj", mesh1);
+	loadObj("data/bunny.obj", mesh1);
 	loadObj("data/bunny.obj", mesh2);
 
 	// scalefactor and offset to position/scale triangle meshes
@@ -647,8 +647,8 @@ void initCUDAmemoryTriMesh()
 		// store two edges per triangle instead of vertices, to save some calculations in the
 		// ray triangle intersection test
 		triangles.push_back(make_float4(v0.x, v0.y, v0.z, 0));
-		triangles.push_back(make_float4(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, 0));  
-		triangles.push_back(make_float4(v2.x - v0.x, v2.y - v0.y, v2.z - v0.z, 0)); 
+		triangles.push_back(make_float4(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, 0));
+		triangles.push_back(make_float4(v2.x - v0.x, v2.y - v0.y, v2.z - v0.z, 0));
 	}
 
 	// compute bounding box of this mesh
@@ -670,8 +670,8 @@ void initCUDAmemoryTriMesh()
 		v2 += offset2;
 
 		triangles.push_back(make_float4(v0.x, v0.y, v0.z, 0));
-		triangles.push_back(make_float4(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, 1)); 
-		triangles.push_back(make_float4(v2.x - v0.x, v2.y - v0.y, v2.z - v0.z, 0)); 
+		triangles.push_back(make_float4(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, 1));
+		triangles.push_back(make_float4(v2.x - v0.x, v2.y - v0.y, v2.z - v0.z, 0));
 	}
 
 	mesh2.bounding_box[0] *= scalefactor2; mesh2.bounding_box[0] += offset2;
@@ -764,6 +764,21 @@ void loadObj(const std::string filename, TriangleMesh &mesh)
 		<< mesh.bounding_box[1].x << "," << mesh.bounding_box[1].y << "," << mesh.bounding_box[1].z << ")" << std::endl;
 }
 
+void createVBO(GLuint* vbo)
+{
+	//create vertex buffer object
+	glGenBuffers(1, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+	
+	//initialize VBO
+	unsigned int size = width * height * sizeof(float3);  // 3 floats
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+	//register VBO with CUDA
+	cudaGLRegisterBufferObject(*vbo);
+}
+
 int main(int argc, char** argv){
 
 	// allocate memmory for the accumulation buffer on the GPU
@@ -797,14 +812,7 @@ int main(int argc, char** argv){
 	// call Timer():
 	Timer(0);
 	//create VBO (vertex buffer object)
-	glGenBuffers(1, vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-	//initialize VBO
-	unsigned int size = width * height * sizeof(float3);  // 3 floats
-	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//register VBO with CUDA
-	cudaGLRegisterBufferObject(*vbo);
+	createVBO(&vbo);
 	fprintf(stderr, "VBO created  \n");
 	// enter the main loop and process events
 	fprintf(stderr, "Entering glutMainLoop...  \n");
