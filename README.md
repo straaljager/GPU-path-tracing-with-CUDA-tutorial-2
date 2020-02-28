@@ -2,6 +2,8 @@
 Basic CUDA path tracer with triangle mesh support (based on CUDA raytracer from http://cg.alexandra.dk/?p=278)
 Sam Lapere, 2015
 
+More details at https://raytracey.blogspot.com/2015/12/gpu-path-tracing-tutorial-2-interactive.html
+
 In order to keep the code to a minimum, there are lots of hardcoded values at the moment. The comments should clarify most of what's happening but let me know if something isn't clear. 
 
 The code probably contains some bugs as I haven't had much time to do many testing. It will probably be revised for the next tutorial.
